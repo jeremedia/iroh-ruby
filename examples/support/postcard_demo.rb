@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 require "thread"
-require "timeout"
-require "iroh"
+require_relative "loopback_support"
 
 module Iroh
   module Examples
@@ -78,14 +77,7 @@ module Iroh
       end
 
       def bind_endpoint
-        Iroh::Endpoint.bind(
-          Iroh::EndpointOptions.new(
-            preset: Iroh.preset_minimal,
-            relay_mode: Iroh::RelayMode.disabled,
-            bind_addr: "127.0.0.1:0",
-            alpns: [ALPN]
-          )
-        )
+        LoopbackSupport.bind_endpoint(ALPN)
       end
 
       def receive_one_message(receiver, receiver_queue)
@@ -103,87 +95,47 @@ module Iroh
       end
 
       def normalize_message(message)
-        message.to_s.encode(Encoding::UTF_8)
+        LoopbackSupport.normalize_message(message)
       end
 
       def normalize_payload(payload)
-        payload = payload.to_s
-        payload.force_encoding(Encoding::UTF_8)
-        payload
+        LoopbackSupport.normalize_payload(payload)
       end
 
       def close_endpoint(endpoint)
-        return unless endpoint
-        return if endpoint.is_closed
-
-        endpoint.close
-      rescue StandardError
-        nil
+        LoopbackSupport.close_endpoint(endpoint)
       end
 
       def wait_for_receiver_result(receiver_queue, deadline)
-        timeout_seconds = remaining_timeout(
-          deadline,
-          "timed out waiting for postcard receiver"
-        )
-        Timeout.timeout(timeout_seconds, Timeout::Error,
-                        "timed out waiting for postcard receiver after #{format_timeout_seconds(timeout_seconds)} seconds") do
-          receiver_queue.pop
-        end
+        LoopbackSupport.wait_for_receiver_result(receiver_queue, deadline, label: "postcard")
       end
 
       def wait_for_receiver_thread(receiver_thread, deadline)
-        return if receiver_thread.join(0)
-
-        timeout_seconds = remaining_timeout(
-          deadline,
-          "timed out waiting for postcard receiver thread"
-        )
-        return if receiver_thread.join(timeout_seconds)
-
-        raise Timeout::Error,
-              "timed out waiting for postcard receiver thread after #{format_timeout_seconds(timeout_seconds)} seconds"
+        LoopbackSupport.wait_for_receiver_thread(receiver_thread, deadline, label: "postcard")
       end
 
       def cleanup_receiver_thread(receiver_thread)
-        return unless receiver_thread
-        return unless receiver_thread.alive?
-
-        receiver_thread.join(0.25)
-        return unless receiver_thread.alive?
-
-        receiver_thread.kill
-        receiver_thread.join(0.25)
+        LoopbackSupport.cleanup_receiver_thread(receiver_thread)
       end
 
       def with_deadline_timeout(deadline, message)
-        timeout_seconds = remaining_timeout(deadline, message)
-        Timeout.timeout(timeout_seconds, Timeout::Error,
-                        "#{message} after #{format_timeout_seconds(timeout_seconds)} seconds") do
-          yield
-        end
+        LoopbackSupport.with_deadline_timeout(deadline, message) { yield }
       end
 
       def remaining_timeout(deadline, message)
-        remaining = deadline - monotonic_time
-        return remaining if remaining.positive?
-
-        raise Timeout::Error, message
+        LoopbackSupport.remaining_timeout(deadline, message)
       end
 
       def normalize_timeout_seconds(timeout)
-        seconds = Float(timeout)
-        raise ArgumentError, "timeout must be positive" unless seconds.positive?
-
-        seconds
+        LoopbackSupport.normalize_timeout_seconds(timeout)
       end
 
       def format_timeout_seconds(seconds)
-        seconds == seconds.to_i ? seconds.to_i.to_s : seconds.to_s
+        LoopbackSupport.format_timeout_seconds(seconds)
       end
 
       def monotonic_time
-        Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        LoopbackSupport.monotonic_time
       end
     end
   end
