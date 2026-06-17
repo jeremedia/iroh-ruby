@@ -52,6 +52,25 @@ puts ticket.to_s
 endpoint.close
 ```
 
+## Demo
+
+Run the postcard demo through Rake:
+
+```sh
+bundle exec rake demo:postcard
+```
+
+Or run it directly with a custom payload:
+
+```sh
+bundle exec ruby examples/postcard.rb "hello from ruby iroh"
+```
+
+The demo starts two local endpoints with relays disabled, sends one payload over
+a unidirectional stream, prints endpoint ids, and closes both endpoints. It is
+intentionally local-only to prove the Ruby binding and async bridge without
+external service dependencies.
+
 ## Development
 
 Regenerate the Ruby UniFFI binding after changing `vendor/iroh-ffi`:

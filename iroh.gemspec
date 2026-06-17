@@ -22,6 +22,7 @@ Gem::Specification.new do |spec|
   spec.files = Dir.chdir(__dir__) do
     Dir[
       "lib/**/*.rb",
+      "examples/**/*.rb",
       "ext/**/*",
       "vendor/iroh-ffi/{Cargo.toml,Cargo.lock,build.rs,iroh.pc.in,uniffi.toml,uniffi-bindgen.rs,LICENSE-*}",
       "vendor/iroh-ffi/src/**/*.rs",
