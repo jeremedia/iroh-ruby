@@ -71,6 +71,23 @@ a unidirectional stream, prints endpoint ids, and closes both endpoints. It is
 intentionally local-only to prove the Ruby binding and async bridge without
 external service dependencies.
 
+Run the ticket echo demo to exercise serialized endpoint tickets and
+bidirectional streams:
+
+```sh
+bundle exec rake demo:ticket_echo
+```
+
+Or run it directly with a custom payload:
+
+```sh
+bundle exec ruby examples/ticket_echo.rb "hello from ticket land"
+```
+
+The demo creates an `EndpointTicket`, parses the serialized ticket back into an
+endpoint address, opens a bidirectional stream, sends one payload, receives an
+echo response, and closes both endpoints.
+
 ## Development
 
 Regenerate the Ruby UniFFI binding after changing `vendor/iroh-ffi`:
