@@ -67,6 +67,11 @@ namespace :demo do
   task postcard: "native:build" do
     ruby "examples/postcard.rb", "hello from ruby iroh"
   end
+
+  desc "Run the ticket echo demo"
+  task ticket_echo: "native:build" do
+    ruby "examples/ticket_echo.rb", "hello from ticket land"
+  end
 end
 
 task test: "native:build"
