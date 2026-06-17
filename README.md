@@ -88,6 +88,21 @@ The demo creates an `EndpointTicket`, parses the serialized ticket back into an
 endpoint address, opens a bidirectional stream, sends one payload, receives an
 echo response, and closes both endpoints.
 
+Run the datagram ping demo to exercise unordered datagram messages:
+
+```sh
+bundle exec rake demo:datagram_ping
+```
+
+Or run it directly with a custom payload:
+
+```sh
+bundle exec ruby examples/datagram_ping.rb "hello from datagram land"
+```
+
+The demo opens a local connection, sends one `ping:` datagram, receives one
+`pong:` datagram, prints both endpoint ids, and closes both endpoints.
+
 ## Development
 
 Regenerate the Ruby UniFFI binding after changing `vendor/iroh-ffi`:

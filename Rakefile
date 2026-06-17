@@ -72,6 +72,11 @@ namespace :demo do
   task ticket_echo: "native:build" do
     ruby "examples/ticket_echo.rb", "hello from ticket land"
   end
+
+  desc "Run the datagram ping demo"
+  task datagram_ping: "native:build" do
+    ruby "examples/datagram_ping.rb", "hello from datagram land"
+  end
 end
 
 task test: "native:build"
