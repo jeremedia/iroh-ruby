@@ -62,5 +62,12 @@ namespace :native do
   end
 end
 
+namespace :demo do
+  desc "Run the loopback postcard demo"
+  task postcard: "native:build" do
+    ruby "examples/postcard.rb", "hello from ruby iroh"
+  end
+end
+
 task test: "native:build"
 task default: :test
