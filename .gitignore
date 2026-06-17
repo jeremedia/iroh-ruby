@@ -1,0 +1,10 @@
+.DS_Store
+/.serena/
+/.bundle/
+/coverage/
+/iroh-*.gem
+/pkg/
+/tmp/
+/lib/iroh/native/libiroh_ffi.dylib
+/lib/iroh/native/libiroh_ffi.so
+/lib/iroh/native/iroh_ffi.dll
