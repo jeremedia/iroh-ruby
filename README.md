@@ -157,3 +157,13 @@ Run tests:
 ```sh
 bundle exec rake test
 ```
+
+Verify the packaged gem from an isolated consumer install:
+
+```sh
+bundle exec rake smoke:installed_gem
+```
+
+This builds the gem, installs it into a temporary `GEM_HOME`, runs Ruby outside
+the repository checkout, requires `iroh`, checks bundled native library lookup,
+and exercises a minimal key, endpoint, and ticket lifecycle.

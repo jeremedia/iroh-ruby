@@ -28,4 +28,4 @@ jobs:
       - run: bundle exec rake test
       - run: bundle exec rake demo:ticket_exchange
       - run: bundle exec rake demo:connection_telemetry
-      - run: bundle exec gem build iroh.gemspec
+      - run: bundle exec rake smoke:installed_gem

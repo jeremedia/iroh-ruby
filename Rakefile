@@ -5,6 +5,7 @@ require "fileutils"
 require "open3"
 require "rbconfig"
 require "timeout"
+require_relative "tasks/installed_gem_smoke"
 
 ROOT = __dir__
 VENDOR_DIR = File.join(ROOT, "vendor", "iroh-ffi")
@@ -164,6 +165,13 @@ namespace :demo do
   desc "Run the automated connection telemetry demo"
   task connection_telemetry: "native:build" do
     ruby "examples/connection_telemetry.rb"
+  end
+end
+
+namespace :smoke do
+  desc "Build, install, and require the gem from an isolated consumer GEM_HOME"
+  task :installed_gem do
+    Iroh::Tasks::InstalledGemSmoke.run(root: ROOT)
   end
 end
 
