@@ -144,6 +144,25 @@ snapshots such as connection stats, selected paths, RTT, and endpoint counters.
 The `Endpoint#online` wait and watcher/callback APIs are left for later
 threading-focused demos.
 
+Run the protocol router demo to exercise router-backed ALPN dispatch:
+
+```sh
+bundle exec rake demo:protocol_router
+```
+
+Or run it directly with a custom payload:
+
+```sh
+bundle exec ruby examples/protocol_router.rb "hello from the protocol router"
+```
+
+The demo binds a server endpoint with `EndpointOptions#protocols`, registers a
+native `ProtocolCreator` handle, connects a client with the matching ALPN, sends
+one bidirectional stream request, receives a `routed:` response, and verifies
+handler create, accept, and shutdown counts. Ruby-owned protocol callbacks are
+not exposed by the current UniFFI Ruby generator, so this demo uses a
+Rust-owned recorder object to prove the real router path.
+
 ## Development
 
 Regenerate the Ruby UniFFI binding after changing `vendor/iroh-ffi`:

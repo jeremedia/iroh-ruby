@@ -37,6 +37,7 @@ module Iroh
     Preset
     ProtocolCreator
     ProtocolHandler
+    ProtocolRouterEchoRecorder
     RecvStream
     RelayConfig
     RelayMap

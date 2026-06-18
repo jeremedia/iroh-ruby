@@ -166,6 +166,11 @@ namespace :demo do
   task connection_telemetry: "native:build" do
     ruby "examples/connection_telemetry.rb"
   end
+
+  desc "Run the protocol router demo"
+  task protocol_router: "native:build" do
+    ruby "examples/protocol_router.rb"
+  end
 end
 
 namespace :smoke do

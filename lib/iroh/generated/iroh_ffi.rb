@@ -975,6 +975,13 @@ module IrohFfi
       ProtocolHandler.uniffi_allocate(handle)
     end
 
+    # The Object type ProtocolRouterEchoRecorder.
+
+    def readTypeProtocolRouterEchoRecorder
+      handle = unpack_from 8, 'Q>'
+      ProtocolRouterEchoRecorder.uniffi_allocate(handle)
+    end
+
     # The Object type RecvStream.
 
     def readTypeRecvStream
@@ -1714,6 +1721,13 @@ module IrohFfi
       pack_into(8, 'Q>', handle)
     end
 
+    # The Object type ProtocolRouterEchoRecorder.
+
+    def write_TypeProtocolRouterEchoRecorder(obj)
+      handle = ProtocolRouterEchoRecorder.uniffi_lower obj
+      pack_into(8, 'Q>', handle)
+    end
+
     # The Object type RecvStream.
 
     def write_TypeRecvStream(obj)
@@ -2167,6 +2181,7 @@ module IrohFfi
   # Map error modules to the RustBuffer method name that reads them
   ERROR_MODULE_TO_READER_METHOD = {
 
+    "IrohFfi::IrohError" => :readTypeIrohError,
     CallbackError => :readTypeCallbackError
 
   }.freeze
@@ -2176,8 +2191,13 @@ module IrohFfi
 
   def self.consume_buffer_into_error(error_module, rust_buffer)
     rust_buffer.consumeWithStream do |stream|
-      reader_method = ERROR_MODULE_TO_READER_METHOD[error_module]
-      return stream.send(reader_method)
+      reader_method = ERROR_MODULE_TO_READER_METHOD[error_module] ||
+                      ERROR_MODULE_TO_READER_METHOD[error_module.name]
+      error = stream.send(reader_method)
+      return error if error.is_a?(Exception)
+      return RuntimeError.new(error.message) if error.respond_to?(:message)
+
+      RuntimeError.new(error.to_s)
     end
   end
 
@@ -2510,6 +2530,39 @@ module IrohFfi
                     [:uint64, :uint64, RustCallStatus.by_ref],
                     :uint64
     attach_function :uniffi_iroh_ffi_fn_method_protocolhandler_shutdown,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_clone_protocolrouterechorecorder,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_free_protocolrouterechorecorder,
+                    [:uint64, RustCallStatus.by_ref],
+                    :void
+    attach_function :uniffi_iroh_ffi_fn_constructor_protocolrouterechorecorder_new,
+                    [RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_constructor_protocolrouterechorecorder_with_response_prefix,
+                    [RustBuffer.by_value, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_accepted_count,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_created_count,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_creator,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_last_error,
+                    [:uint64, RustCallStatus.by_ref],
+                    RustBuffer.by_value
+    attach_function :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_last_received,
+                    [:uint64, RustCallStatus.by_ref],
+                    RustBuffer.by_value
+    attach_function :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_last_sent,
+                    [:uint64, RustCallStatus.by_ref],
+                    RustBuffer.by_value
+    attach_function :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_shutdown_count,
                     [:uint64, RustCallStatus.by_ref],
                     :uint64
     attach_function :uniffi_iroh_ffi_fn_clone_recvstream,
@@ -3106,6 +3159,27 @@ module IrohFfi
     attach_function :uniffi_iroh_ffi_checksum_method_protocolhandler_shutdown,
                     [RustCallStatus.by_ref],
                     :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_protocolrouterechorecorder_accepted_count,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_protocolrouterechorecorder_created_count,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_protocolrouterechorecorder_creator,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_protocolrouterechorecorder_last_error,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_protocolrouterechorecorder_last_received,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_protocolrouterechorecorder_last_sent,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_protocolrouterechorecorder_shutdown_count,
+                    [RustCallStatus.by_ref],
+                    :uint16
     attach_function :uniffi_iroh_ffi_checksum_method_recvstream_bytes_read,
                     [RustCallStatus.by_ref],
                     :uint16
@@ -3293,6 +3367,12 @@ module IrohFfi
                     [RustCallStatus.by_ref],
                     :uint16
     attach_function :uniffi_iroh_ffi_checksum_constructor_endpointticket_from_string,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_constructor_protocolrouterechorecorder_new,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_constructor_protocolrouterechorecorder_with_response_prefix,
                     [RustCallStatus.by_ref],
                     :uint16
     attach_function :ffi_iroh_ffi_uniffi_contract_version,
@@ -4786,6 +4866,118 @@ module IrohFfi
 
     def shutdown
       IrohFfi.rust_call(:uniffi_iroh_ffi_fn_method_protocolhandler_shutdown, uniffi_clone_handle)
+    end
+  end
+
+  class ProtocolRouterEchoRecorder
+    # A private helper for initializing instances of the class from a raw handle,
+    # bypassing any initialization logic and ensuring they are GC'd properly.
+    def self.uniffi_allocate(handle)
+      inst = allocate
+      inst.instance_variable_set :@handle, handle
+      ObjectSpace.define_finalizer(inst, uniffi_define_finalizer_by_handle(handle, inst.object_id))
+      inst
+    end
+
+    # A private helper for registering an object finalizer.
+    # N.B. it's important that this does not capture a reference
+    # to the actual instance, only its underlying handle.
+    def self.uniffi_define_finalizer_by_handle(handle, _object_id)
+      proc do |_id|
+        IrohFfi.rust_call(
+          :uniffi_iroh_ffi_fn_free_protocolrouterechorecorder,
+          handle
+        )
+      end
+    end
+
+    # A private helper for lowering instances into a raw handle.
+    # This does an explicit typecheck, because accidentally lowering a different type of
+    # object in a place where this type is expected, could lead to memory unsafety.
+    def self.uniffi_check_lower(inst)
+      return if inst.is_a? self
+
+      raise TypeError, "Expected a ProtocolRouterEchoRecorder instance, got #{inst}"
+    end
+
+    def uniffi_clone_handle
+      IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_clone_protocolrouterechorecorder,
+        @handle
+      )
+    end
+
+    def self.uniffi_lower(inst)
+      inst.uniffi_clone_handle
+    end
+
+    def initialize
+      handle = IrohFfi.rust_call(:uniffi_iroh_ffi_fn_constructor_protocolrouterechorecorder_new)
+      @handle = handle
+      ObjectSpace.define_finalizer(self, self.class.uniffi_define_finalizer_by_handle(handle, object_id))
+    end
+
+    def self.with_response_prefix(response_prefix)
+      response_prefix = IrohFfi.uniffi_utf8(response_prefix)
+      uniffi_allocate(
+        IrohFfi.rust_call(
+          :uniffi_iroh_ffi_fn_constructor_protocolrouterechorecorder_with_response_prefix,
+          RustBuffer.allocFromString(response_prefix)
+        )
+      )
+    end
+
+    def accepted_count
+      IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_accepted_count,
+        uniffi_clone_handle
+      ).to_i
+    end
+
+    def created_count
+      IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_created_count,
+        uniffi_clone_handle
+      ).to_i
+    end
+
+    def creator
+      result = IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_creator,
+        uniffi_clone_handle
+      )
+      ProtocolCreator.uniffi_allocate(result)
+    end
+
+    def last_error
+      result = IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_last_error,
+        uniffi_clone_handle
+      )
+      result.consumeIntoOptionalstring
+    end
+
+    def last_received
+      result = IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_last_received,
+        uniffi_clone_handle
+      )
+      result.consumeIntoOptionalstring
+    end
+
+    def last_sent
+      result = IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_last_sent,
+        uniffi_clone_handle
+      )
+      result.consumeIntoOptionalstring
+    end
+
+    def shutdown_count
+      IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_protocolrouterechorecorder_shutdown_count,
+        uniffi_clone_handle
+      ).to_i
     end
   end
 

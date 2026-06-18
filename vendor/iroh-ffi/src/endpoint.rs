@@ -1,4 +1,9 @@
-use std::{collections::HashMap, fmt::Debug, str::FromStr, sync::Arc};
+use std::{
+    collections::HashMap,
+    fmt::Debug,
+    str::FromStr,
+    sync::{Arc, Mutex as StdMutex},
+};
 
 use iroh::{
     endpoint::{self, presets, presets::Preset as _},
@@ -212,6 +217,148 @@ impl iroh::protocol::ProtocolHandler for ProtocolWrapper {
     async fn shutdown(&self) {
         let this = self.clone();
         this.handler.shutdown().await;
+    }
+}
+
+const PROTOCOL_ROUTER_ECHO_DEFAULT_PREFIX: &str = "routed: ";
+const PROTOCOL_ROUTER_ECHO_MAX_PAYLOAD_BYTES: u32 = 1_048_576;
+
+#[derive(Debug, Default)]
+struct ProtocolRouterEchoState {
+    created_count: u64,
+    accepted_count: u64,
+    shutdown_count: u64,
+    last_received: Option<String>,
+    last_sent: Option<String>,
+    last_error: Option<String>,
+}
+
+#[derive(Debug)]
+struct ProtocolRouterEchoInner {
+    response_prefix: String,
+    state: StdMutex<ProtocolRouterEchoState>,
+}
+
+/// Records a small native protocol-router echo handler for language-binding demos.
+///
+/// Ruby currently receives Rust-owned callback handles from UniFFI, but UniFFI
+/// 0.31 does not generate the Ruby foreign-callback runtime needed for
+/// Ruby-owned `ProtocolCreator` implementations. This object gives Ruby tests
+/// and examples a real `ProtocolCreator` handle while keeping observable
+/// invocation state available on the Ruby side.
+#[derive(Debug, uniffi::Object)]
+pub struct ProtocolRouterEchoRecorder {
+    inner: Arc<ProtocolRouterEchoInner>,
+}
+
+#[uniffi::export]
+impl ProtocolRouterEchoRecorder {
+    #[uniffi::constructor]
+    pub fn new() -> Self {
+        Self::with_response_prefix(PROTOCOL_ROUTER_ECHO_DEFAULT_PREFIX.to_string())
+    }
+
+    #[uniffi::constructor]
+    pub fn with_response_prefix(response_prefix: String) -> Self {
+        Self {
+            inner: Arc::new(ProtocolRouterEchoInner {
+                response_prefix,
+                state: StdMutex::new(ProtocolRouterEchoState::default()),
+            }),
+        }
+    }
+
+    pub fn creator(&self) -> Arc<dyn ProtocolCreator> {
+        Arc::new(ProtocolRouterEchoCreator {
+            inner: self.inner.clone(),
+        })
+    }
+
+    pub fn created_count(&self) -> u64 {
+        self.inner.state.lock().unwrap().created_count
+    }
+
+    pub fn accepted_count(&self) -> u64 {
+        self.inner.state.lock().unwrap().accepted_count
+    }
+
+    pub fn shutdown_count(&self) -> u64 {
+        self.inner.state.lock().unwrap().shutdown_count
+    }
+
+    pub fn last_received(&self) -> Option<String> {
+        self.inner.state.lock().unwrap().last_received.clone()
+    }
+
+    pub fn last_sent(&self) -> Option<String> {
+        self.inner.state.lock().unwrap().last_sent.clone()
+    }
+
+    pub fn last_error(&self) -> Option<String> {
+        self.inner.state.lock().unwrap().last_error.clone()
+    }
+}
+
+#[derive(Debug, Clone)]
+struct ProtocolRouterEchoCreator {
+    inner: Arc<ProtocolRouterEchoInner>,
+}
+
+impl ProtocolCreator for ProtocolRouterEchoCreator {
+    fn create(&self, _endpoint: Arc<Endpoint>) -> Arc<dyn ProtocolHandler> {
+        self.inner.state.lock().unwrap().created_count += 1;
+        Arc::new(ProtocolRouterEchoHandler {
+            inner: self.inner.clone(),
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+struct ProtocolRouterEchoHandler {
+    inner: Arc<ProtocolRouterEchoInner>,
+}
+
+#[async_trait::async_trait]
+impl ProtocolHandler for ProtocolRouterEchoHandler {
+    async fn accept(&self, conn: Arc<Connection>) -> Result<(), CallbackError> {
+        match self.accept_inner(conn).await {
+            Ok((received, sent)) => {
+                let mut state = self.inner.state.lock().unwrap();
+                state.accepted_count += 1;
+                state.last_received = Some(received);
+                state.last_sent = Some(sent);
+                state.last_error = None;
+                Ok(())
+            }
+            Err(error) => {
+                self.inner.state.lock().unwrap().last_error = Some("accept failed".to_string());
+                Err(error)
+            }
+        }
+    }
+
+    async fn shutdown(&self) {
+        self.inner.state.lock().unwrap().shutdown_count += 1;
+    }
+}
+
+impl ProtocolRouterEchoHandler {
+    async fn accept_inner(&self, conn: Arc<Connection>) -> Result<(String, String), CallbackError> {
+        let stream = conn.accept_bi().await.map_err(|_| CallbackError::Error)?;
+        let request_bytes = stream
+            .recv()
+            .read_to_end(PROTOCOL_ROUTER_ECHO_MAX_PAYLOAD_BYTES)
+            .await
+            .map_err(|_| CallbackError::Error)?;
+        let received = String::from_utf8_lossy(&request_bytes).to_string();
+        let sent = format!("{}{}", self.inner.response_prefix, received);
+        let send = stream.send();
+        send.write_all(sent.as_bytes())
+            .await
+            .map_err(|_| CallbackError::Error)?;
+        send.finish().await.map_err(|_| CallbackError::Error)?;
+        conn.closed().await;
+        Ok((received, sent))
     }
 }
 
