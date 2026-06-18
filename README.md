@@ -125,6 +125,25 @@ The server prints a serialized endpoint ticket before waiting for a client. The
 client parses that ticket in a separate Ruby process, opens a bidirectional
 stream, sends one payload, receives an echo response, and closes its endpoint.
 
+Run the connection telemetry demo to inspect snapshot connection state:
+
+```sh
+bundle exec rake demo:connection_telemetry
+```
+
+Or run it directly with a custom payload:
+
+```sh
+bundle exec ruby examples/connection_telemetry.rb "hello from telemetry land"
+```
+
+The demo starts a server in a separate Ruby process, connects a client with the
+printed endpoint ticket, exchanges one bidirectional stream payload, and prints
+client and server telemetry snapshots before closing endpoints. It uses polling
+snapshots such as connection stats, selected paths, RTT, and endpoint counters.
+The `Endpoint#online` wait and watcher/callback APIs are left for later
+threading-focused demos.
+
 ## Development
 
 Regenerate the Ruby UniFFI binding after changing `vendor/iroh-ffi`:

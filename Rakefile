@@ -160,6 +160,11 @@ namespace :demo do
       end
     end
   end
+
+  desc "Run the automated connection telemetry demo"
+  task connection_telemetry: "native:build" do
+    ruby "examples/connection_telemetry.rb"
+  end
 end
 
 task test: "native:build"
