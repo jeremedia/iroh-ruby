@@ -2,7 +2,9 @@
 
 require "rake/testtask"
 require "fileutils"
+require "open3"
 require "rbconfig"
+require "timeout"
 
 ROOT = __dir__
 VENDOR_DIR = File.join(ROOT, "vendor", "iroh-ffi")
@@ -76,6 +78,87 @@ namespace :demo do
   desc "Run the datagram ping demo"
   task datagram_ping: "native:build" do
     ruby "examples/datagram_ping.rb", "hello from datagram land"
+  end
+
+  desc "Run the two-process ticket exchange server"
+  task ticket_server: "native:build" do
+    ruby "examples/ticket_server.rb"
+  end
+
+  desc "Run the two-process ticket exchange client"
+  task :ticket_client, [:ticket, :message] => "native:build" do |_task, args|
+    abort "usage: bundle exec rake 'demo:ticket_client[ticket,message]'" unless args[:ticket]
+
+    ruby "examples/ticket_client.rb", args[:ticket], args[:message] || "hello from another ruby process"
+  end
+
+  desc "Run the automated two-process ticket exchange demo"
+  task ticket_exchange: "native:build" do
+    server_stdin = nil
+    server_stdout = nil
+    server_stderr = nil
+    server_wait = nil
+    server_err_reader = nil
+
+    begin
+      server_stdin, server_stdout, server_stderr, server_wait = Open3.popen3(
+        RbConfig.ruby,
+        "examples/ticket_server.rb"
+      )
+      server_stdin.close
+      server_err_reader = Thread.new { server_stderr.read }
+      ticket_line = Timeout.timeout(10, Timeout::Error, "timed out waiting for ticket server") do
+        loop do
+          line = server_stdout.gets
+          abort "ticket server exited before printing a ticket" unless line
+          line = line.chomp
+          break line if line.start_with?("ticket: ")
+        end
+      end
+      ticket = ticket_line.sub(/\Aticket:\s*/, "")
+      message = "hello from another ruby process"
+
+      client_stdout, client_stderr, client_status = Timeout.timeout(
+        10,
+        Timeout::Error,
+        "timed out running ticket exchange client"
+      ) do
+        Open3.capture3(
+          RbConfig.ruby,
+          "examples/ticket_client.rb",
+          ticket,
+          message
+        )
+      end
+
+      server_stdout_tail = Timeout.timeout(
+        10,
+        Timeout::Error,
+        "timed out waiting for ticket exchange server exit"
+      ) do
+        server_stdout.read
+      end
+      server_status = server_wait.value
+      server_stderr_text = server_err_reader.value
+
+      abort client_stderr unless client_status.success?
+      abort server_stderr_text unless server_status.success?
+
+      puts "iroh-ruby ticket exchange demo"
+      puts "ticket:   #{ticket}"
+      puts client_stdout
+      puts server_stdout_tail
+    ensure
+      [server_stdout, server_stderr].each do |io|
+        io&.close unless io&.closed?
+      rescue IOError
+        nil
+      end
+      if server_wait && server_wait.alive?
+        Process.kill("TERM", server_wait.pid)
+        server_wait.value
+      end
+    end
   end
 end
 

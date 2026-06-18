@@ -103,6 +103,28 @@ bundle exec ruby examples/datagram_ping.rb "hello from datagram land"
 The demo opens a local connection, sends one `ping:` datagram, receives one
 `pong:` datagram, prints both endpoint ids, and closes both endpoints.
 
+Run the ticket exchange demo to exercise a ticket across two Ruby processes:
+
+```sh
+bundle exec rake demo:ticket_exchange
+```
+
+For the manual two-terminal workflow, start the server first:
+
+```sh
+bundle exec ruby examples/ticket_server.rb
+```
+
+Copy the printed ticket into the client command:
+
+```sh
+bundle exec ruby examples/ticket_client.rb "<ticket>" "hello from another ruby process"
+```
+
+The server prints a serialized endpoint ticket before waiting for a client. The
+client parses that ticket in a separate Ruby process, opens a bidirectional
+stream, sends one payload, receives an echo response, and closes its endpoint.
+
 ## Development
 
 Regenerate the Ruby UniFFI binding after changing `vendor/iroh-ffi`:
