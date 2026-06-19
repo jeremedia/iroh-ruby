@@ -171,6 +171,11 @@ namespace :demo do
   task protocol_router: "native:build" do
     ruby "examples/protocol_router.rb"
   end
+
+  desc "Run the endpoint watchers demo"
+  task endpoint_watchers: "native:build" do
+    ruby "examples/endpoint_watchers.rb"
+  end
 end
 
 namespace :smoke do

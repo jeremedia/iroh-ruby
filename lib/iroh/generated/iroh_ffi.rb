@@ -856,6 +856,13 @@ module IrohFfi
       AddrChangeCallback.uniffi_allocate(handle)
     end
 
+    # The Object type AddrChangeRecorder.
+
+    def readTypeAddrChangeRecorder
+      handle = unpack_from 8, 'Q>'
+      AddrChangeRecorder.uniffi_allocate(handle)
+    end
+
     # The Object type BiStream.
 
     def readTypeBiStream
@@ -919,6 +926,13 @@ module IrohFfi
       HomeRelayCallback.uniffi_allocate(handle)
     end
 
+    # The Object type HomeRelayRecorder.
+
+    def readTypeHomeRelayRecorder
+      handle = unpack_from 8, 'Q>'
+      HomeRelayRecorder.uniffi_allocate(handle)
+    end
+
     # The Object type Incoming.
 
     def readTypeIncoming
@@ -938,6 +952,13 @@ module IrohFfi
     def readTypeNetworkChangeCallback
       handle = unpack_from 8, 'Q>'
       NetworkChangeCallback.uniffi_allocate(handle)
+    end
+
+    # The Object type NetworkChangeRecorder.
+
+    def readTypeNetworkChangeRecorder
+      handle = unpack_from 8, 'Q>'
+      NetworkChangeRecorder.uniffi_allocate(handle)
     end
 
     # The Object type PathChangeCallback.
@@ -1602,6 +1623,13 @@ module IrohFfi
       pack_into(8, 'Q>', handle)
     end
 
+    # The Object type AddrChangeRecorder.
+
+    def write_TypeAddrChangeRecorder(obj)
+      handle = AddrChangeRecorder.uniffi_lower obj
+      pack_into(8, 'Q>', handle)
+    end
+
     # The Object type BiStream.
 
     def write_TypeBiStream(obj)
@@ -1665,6 +1693,13 @@ module IrohFfi
       pack_into(8, 'Q>', handle)
     end
 
+    # The Object type HomeRelayRecorder.
+
+    def write_TypeHomeRelayRecorder(obj)
+      handle = HomeRelayRecorder.uniffi_lower obj
+      pack_into(8, 'Q>', handle)
+    end
+
     # The Object type Incoming.
 
     def write_TypeIncoming(obj)
@@ -1683,6 +1718,13 @@ module IrohFfi
 
     def write_TypeNetworkChangeCallback(obj)
       handle = NetworkChangeCallback.uniffi_lower obj
+      pack_into(8, 'Q>', handle)
+    end
+
+    # The Object type NetworkChangeRecorder.
+
+    def write_TypeNetworkChangeRecorder(obj)
+      handle = NetworkChangeRecorder.uniffi_lower obj
       pack_into(8, 'Q>', handle)
     end
 
@@ -2883,6 +2925,27 @@ module IrohFfi
     attach_function :uniffi_iroh_ffi_fn_method_addrchangecallback_on_change,
                     [:uint64, :uint64, RustCallStatus.by_ref],
                     :uint64
+    attach_function :uniffi_iroh_ffi_fn_clone_addrchangerecorder,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_free_addrchangerecorder,
+                    [:uint64, RustCallStatus.by_ref],
+                    :void
+    attach_function :uniffi_iroh_ffi_fn_constructor_addrchangerecorder_new,
+                    [RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_method_addrchangerecorder_callback,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_method_addrchangerecorder_event_count,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_method_addrchangerecorder_latest_addr,
+                    [:uint64, RustCallStatus.by_ref],
+                    RustBuffer.by_value
+    attach_function :uniffi_iroh_ffi_fn_method_addrchangerecorder_wait_for_events,
+                    [:uint64, :uint64, :uint64, RustCallStatus.by_ref],
+                    :int8
     attach_function :uniffi_iroh_ffi_fn_clone_homerelaycallback,
                     [:uint64, RustCallStatus.by_ref],
                     :uint64
@@ -2895,6 +2958,27 @@ module IrohFfi
     attach_function :uniffi_iroh_ffi_fn_method_homerelaycallback_on_change,
                     [:uint64, RustBuffer.by_value, RustCallStatus.by_ref],
                     :uint64
+    attach_function :uniffi_iroh_ffi_fn_clone_homerelayrecorder,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_free_homerelayrecorder,
+                    [:uint64, RustCallStatus.by_ref],
+                    :void
+    attach_function :uniffi_iroh_ffi_fn_constructor_homerelayrecorder_new,
+                    [RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_method_homerelayrecorder_callback,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_method_homerelayrecorder_event_count,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_method_homerelayrecorder_latest_relay_urls,
+                    [:uint64, RustCallStatus.by_ref],
+                    RustBuffer.by_value
+    attach_function :uniffi_iroh_ffi_fn_method_homerelayrecorder_wait_for_events,
+                    [:uint64, :uint64, :uint64, RustCallStatus.by_ref],
+                    :int8
     attach_function :uniffi_iroh_ffi_fn_clone_networkchangecallback,
                     [:uint64, RustCallStatus.by_ref],
                     :uint64
@@ -2907,6 +2991,24 @@ module IrohFfi
     attach_function :uniffi_iroh_ffi_fn_method_networkchangecallback_on_change,
                     [:uint64, RustCallStatus.by_ref],
                     :uint64
+    attach_function :uniffi_iroh_ffi_fn_clone_networkchangerecorder,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_free_networkchangerecorder,
+                    [:uint64, RustCallStatus.by_ref],
+                    :void
+    attach_function :uniffi_iroh_ffi_fn_constructor_networkchangerecorder_new,
+                    [RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_method_networkchangerecorder_callback,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_method_networkchangerecorder_event_count,
+                    [:uint64, RustCallStatus.by_ref],
+                    :uint64
+    attach_function :uniffi_iroh_ffi_fn_method_networkchangerecorder_wait_for_events,
+                    [:uint64, :uint64, :uint64, RustCallStatus.by_ref],
+                    :int8
     attach_function :uniffi_iroh_ffi_fn_clone_watchhandle,
                     [:uint64, RustCallStatus.by_ref],
                     :uint64
@@ -3309,10 +3411,43 @@ module IrohFfi
     attach_function :uniffi_iroh_ffi_checksum_method_addrchangecallback_on_change,
                     [RustCallStatus.by_ref],
                     :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_addrchangerecorder_callback,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_addrchangerecorder_event_count,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_addrchangerecorder_latest_addr,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_addrchangerecorder_wait_for_events,
+                    [RustCallStatus.by_ref],
+                    :uint16
     attach_function :uniffi_iroh_ffi_checksum_method_homerelaycallback_on_change,
                     [RustCallStatus.by_ref],
                     :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_homerelayrecorder_callback,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_homerelayrecorder_event_count,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_homerelayrecorder_latest_relay_urls,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_homerelayrecorder_wait_for_events,
+                    [RustCallStatus.by_ref],
+                    :uint16
     attach_function :uniffi_iroh_ffi_checksum_method_networkchangecallback_on_change,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_networkchangerecorder_callback,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_networkchangerecorder_event_count,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_method_networkchangerecorder_wait_for_events,
                     [RustCallStatus.by_ref],
                     :uint16
     attach_function :uniffi_iroh_ffi_checksum_method_watchhandle_stop,
@@ -3367,6 +3502,15 @@ module IrohFfi
                     [RustCallStatus.by_ref],
                     :uint16
     attach_function :uniffi_iroh_ffi_checksum_constructor_endpointticket_from_string,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_constructor_addrchangerecorder_new,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_constructor_homerelayrecorder_new,
+                    [RustCallStatus.by_ref],
+                    :uint16
+    attach_function :uniffi_iroh_ffi_checksum_constructor_networkchangerecorder_new,
                     [RustCallStatus.by_ref],
                     :uint16
     attach_function :uniffi_iroh_ffi_checksum_constructor_protocolrouterechorecorder_new,
@@ -6000,6 +6144,91 @@ module IrohFfi
     end
   end
 
+  class AddrChangeRecorder
+    # A private helper for initializing instances of the class from a raw handle,
+    # bypassing any initialization logic and ensuring they are GC'd properly.
+    def self.uniffi_allocate(handle)
+      inst = allocate
+      inst.instance_variable_set :@handle, handle
+      ObjectSpace.define_finalizer(inst, uniffi_define_finalizer_by_handle(handle, inst.object_id))
+      inst
+    end
+
+    # A private helper for registering an object finalizer.
+    # N.B. it's important that this does not capture a reference
+    # to the actual instance, only its underlying handle.
+    def self.uniffi_define_finalizer_by_handle(handle, _object_id)
+      proc do |_id|
+        IrohFfi.rust_call(
+          :uniffi_iroh_ffi_fn_free_addrchangerecorder,
+          handle
+        )
+      end
+    end
+
+    # A private helper for lowering instances into a raw handle.
+    # This does an explicit typecheck, because accidentally lowering a different type of
+    # object in a place where this type is expected, could lead to memory unsafety.
+    def self.uniffi_check_lower(inst)
+      return if inst.is_a? self
+
+      raise TypeError, "Expected a AddrChangeRecorder instance, got #{inst}"
+    end
+
+    def uniffi_clone_handle
+      IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_clone_addrchangerecorder,
+        @handle
+      )
+    end
+
+    def self.uniffi_lower(inst)
+      inst.uniffi_clone_handle
+    end
+
+    def initialize
+      handle = IrohFfi.rust_call(:uniffi_iroh_ffi_fn_constructor_addrchangerecorder_new)
+      @handle = handle
+      ObjectSpace.define_finalizer(self, self.class.uniffi_define_finalizer_by_handle(handle, object_id))
+    end
+
+    def callback
+      result = IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_addrchangerecorder_callback,
+        uniffi_clone_handle
+      )
+      AddrChangeCallback.uniffi_allocate(result)
+    end
+
+    def event_count
+      IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_addrchangerecorder_event_count,
+        uniffi_clone_handle
+      ).to_i
+    end
+
+    def latest_addr
+      result = IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_addrchangerecorder_latest_addr,
+        uniffi_clone_handle
+      )
+      result.consumeIntoOptionalTypeEndpointAddr
+    end
+
+    def wait_for_events(min_count, timeout_ms)
+      min_count = IrohFfi.uniffi_in_range(min_count, 'u64', 0, 2**64)
+      timeout_ms = IrohFfi.uniffi_in_range(timeout_ms, 'u64', 0, 2**64)
+
+      result = IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_addrchangerecorder_wait_for_events,
+        uniffi_clone_handle,
+        min_count,
+        timeout_ms
+      )
+      result == 1
+    end
+  end
+
   class HomeRelayCallback
     # A private helper for initializing instances of the class from a raw handle,
     # bypassing any initialization logic and ensuring they are GC'd properly.
@@ -6050,6 +6279,91 @@ module IrohFfi
     end
   end
 
+  class HomeRelayRecorder
+    # A private helper for initializing instances of the class from a raw handle,
+    # bypassing any initialization logic and ensuring they are GC'd properly.
+    def self.uniffi_allocate(handle)
+      inst = allocate
+      inst.instance_variable_set :@handle, handle
+      ObjectSpace.define_finalizer(inst, uniffi_define_finalizer_by_handle(handle, inst.object_id))
+      inst
+    end
+
+    # A private helper for registering an object finalizer.
+    # N.B. it's important that this does not capture a reference
+    # to the actual instance, only its underlying handle.
+    def self.uniffi_define_finalizer_by_handle(handle, _object_id)
+      proc do |_id|
+        IrohFfi.rust_call(
+          :uniffi_iroh_ffi_fn_free_homerelayrecorder,
+          handle
+        )
+      end
+    end
+
+    # A private helper for lowering instances into a raw handle.
+    # This does an explicit typecheck, because accidentally lowering a different type of
+    # object in a place where this type is expected, could lead to memory unsafety.
+    def self.uniffi_check_lower(inst)
+      return if inst.is_a? self
+
+      raise TypeError, "Expected a HomeRelayRecorder instance, got #{inst}"
+    end
+
+    def uniffi_clone_handle
+      IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_clone_homerelayrecorder,
+        @handle
+      )
+    end
+
+    def self.uniffi_lower(inst)
+      inst.uniffi_clone_handle
+    end
+
+    def initialize
+      handle = IrohFfi.rust_call(:uniffi_iroh_ffi_fn_constructor_homerelayrecorder_new)
+      @handle = handle
+      ObjectSpace.define_finalizer(self, self.class.uniffi_define_finalizer_by_handle(handle, object_id))
+    end
+
+    def callback
+      result = IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_homerelayrecorder_callback,
+        uniffi_clone_handle
+      )
+      HomeRelayCallback.uniffi_allocate(result)
+    end
+
+    def event_count
+      IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_homerelayrecorder_event_count,
+        uniffi_clone_handle
+      ).to_i
+    end
+
+    def latest_relay_urls
+      result = IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_homerelayrecorder_latest_relay_urls,
+        uniffi_clone_handle
+      )
+      result.consumeIntoSequencestring
+    end
+
+    def wait_for_events(min_count, timeout_ms)
+      min_count = IrohFfi.uniffi_in_range(min_count, 'u64', 0, 2**64)
+      timeout_ms = IrohFfi.uniffi_in_range(timeout_ms, 'u64', 0, 2**64)
+
+      result = IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_homerelayrecorder_wait_for_events,
+        uniffi_clone_handle,
+        min_count,
+        timeout_ms
+      )
+      result == 1
+    end
+  end
+
   class NetworkChangeCallback
     # A private helper for initializing instances of the class from a raw handle,
     # bypassing any initialization logic and ensuring they are GC'd properly.
@@ -6095,6 +6409,83 @@ module IrohFfi
     def on_change
       IrohFfi.rust_call_with_error(CallbackError, :uniffi_iroh_ffi_fn_method_networkchangecallback_on_change,
                                    uniffi_clone_handle)
+    end
+  end
+
+  class NetworkChangeRecorder
+    # A private helper for initializing instances of the class from a raw handle,
+    # bypassing any initialization logic and ensuring they are GC'd properly.
+    def self.uniffi_allocate(handle)
+      inst = allocate
+      inst.instance_variable_set :@handle, handle
+      ObjectSpace.define_finalizer(inst, uniffi_define_finalizer_by_handle(handle, inst.object_id))
+      inst
+    end
+
+    # A private helper for registering an object finalizer.
+    # N.B. it's important that this does not capture a reference
+    # to the actual instance, only its underlying handle.
+    def self.uniffi_define_finalizer_by_handle(handle, _object_id)
+      proc do |_id|
+        IrohFfi.rust_call(
+          :uniffi_iroh_ffi_fn_free_networkchangerecorder,
+          handle
+        )
+      end
+    end
+
+    # A private helper for lowering instances into a raw handle.
+    # This does an explicit typecheck, because accidentally lowering a different type of
+    # object in a place where this type is expected, could lead to memory unsafety.
+    def self.uniffi_check_lower(inst)
+      return if inst.is_a? self
+
+      raise TypeError, "Expected a NetworkChangeRecorder instance, got #{inst}"
+    end
+
+    def uniffi_clone_handle
+      IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_clone_networkchangerecorder,
+        @handle
+      )
+    end
+
+    def self.uniffi_lower(inst)
+      inst.uniffi_clone_handle
+    end
+
+    def initialize
+      handle = IrohFfi.rust_call(:uniffi_iroh_ffi_fn_constructor_networkchangerecorder_new)
+      @handle = handle
+      ObjectSpace.define_finalizer(self, self.class.uniffi_define_finalizer_by_handle(handle, object_id))
+    end
+
+    def callback
+      result = IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_networkchangerecorder_callback,
+        uniffi_clone_handle
+      )
+      NetworkChangeCallback.uniffi_allocate(result)
+    end
+
+    def event_count
+      IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_networkchangerecorder_event_count,
+        uniffi_clone_handle
+      ).to_i
+    end
+
+    def wait_for_events(min_count, timeout_ms)
+      min_count = IrohFfi.uniffi_in_range(min_count, 'u64', 0, 2**64)
+      timeout_ms = IrohFfi.uniffi_in_range(timeout_ms, 'u64', 0, 2**64)
+
+      result = IrohFfi.rust_call(
+        :uniffi_iroh_ffi_fn_method_networkchangerecorder_wait_for_events,
+        uniffi_clone_handle,
+        min_count,
+        timeout_ms
+      )
+      result == 1
     end
   end
 

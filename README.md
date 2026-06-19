@@ -141,8 +141,27 @@ The demo starts a server in a separate Ruby process, connects a client with the
 printed endpoint ticket, exchanges one bidirectional stream payload, and prints
 client and server telemetry snapshots before closing endpoints. It uses polling
 snapshots such as connection stats, selected paths, RTT, and endpoint counters.
-The `Endpoint#online` wait and watcher/callback APIs are left for later
-threading-focused demos.
+
+Run the endpoint watchers demo to exercise endpoint readiness and watcher
+lifecycle:
+
+```sh
+bundle exec rake demo:endpoint_watchers
+```
+
+Or run it directly:
+
+```sh
+bundle exec ruby examples/endpoint_watchers.rb
+```
+
+The demo binds a local relay-disabled endpoint, runs a bounded `Endpoint#online`
+probe, registers address, home-relay, and network-change watchers, waits for the
+initial address event, stops each watcher handle explicitly, and closes the
+endpoint. In this offline mode, the online probe is allowed to time out because
+full readiness is relay/discovery dependent. Ruby-owned watcher callbacks are
+not exposed by the current UniFFI Ruby generator, so this demo uses Rust-owned
+recorder objects to prove the real watcher path.
 
 Run the protocol router demo to exercise router-backed ALPN dispatch:
 

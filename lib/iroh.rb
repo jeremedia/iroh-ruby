@@ -9,6 +9,7 @@ module Iroh
   PUBLIC_CONSTANTS = %i[
     Accepting
     AddrChangeCallback
+    AddrChangeRecorder
     BiStream
     CallbackError
     Connecting
@@ -24,11 +25,13 @@ module Iroh
     EndpointTicket
     Error
     HomeRelayCallback
+    HomeRelayRecorder
     Incoming
     IncomingAddr
     IncomingLocalAddr
     LogLevel
     NetworkChangeCallback
+    NetworkChangeRecorder
     PathChangeCallback
     PathEvent
     PathEventCallback
