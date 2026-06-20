@@ -176,6 +176,11 @@ namespace :demo do
   task endpoint_watchers: "native:build" do
     ruby "examples/endpoint_watchers.rb"
   end
+
+  desc "Run the iroh-services diagnostics demo"
+  task services_diagnostics: "native:build" do
+    ruby "examples/services_diagnostics.rb"
+  end
 end
 
 namespace :smoke do

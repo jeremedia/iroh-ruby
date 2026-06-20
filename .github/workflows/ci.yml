@@ -30,4 +30,5 @@ jobs:
       - run: bundle exec rake demo:connection_telemetry
       - run: bundle exec rake demo:protocol_router
       - run: bundle exec rake demo:endpoint_watchers
+      - run: bundle exec rake demo:services_diagnostics
       - run: bundle exec rake smoke:installed_gem

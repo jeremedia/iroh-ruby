@@ -163,6 +163,32 @@ full readiness is relay/discovery dependent. Ruby-owned watcher callbacks are
 not exposed by the current UniFFI Ruby generator, so this demo uses Rust-owned
 recorder objects to prove the real watcher path.
 
+Run the services diagnostics demo to exercise `iroh-services` client
+construction without requiring service credentials:
+
+```sh
+bundle exec rake demo:services_diagnostics
+```
+
+Or run it directly:
+
+```sh
+bundle exec ruby examples/services_diagnostics.rb
+```
+
+The default dry mode binds a local relay-disabled endpoint, constructs a
+`ServicesClient` with a structurally valid fake API secret, disables the metrics
+interval, prints construction proof, and closes the endpoint. It does not contact
+`services.iroh.computer`. To run the live path, provide real credentials:
+
+```sh
+IROH_SERVICES_LIVE=1 IROH_SERVICES_API_SECRET=... bundle exec ruby examples/services_diagnostics.rb
+```
+
+Live mode calls `ping`, `push_metrics`, and `submit_network_diagnostics(false)`.
+Set `IROH_SERVICES_SEND=1` as well if you intentionally want to submit the
+diagnostics report to iroh-services.
+
 Run the protocol router demo to exercise router-backed ALPN dispatch:
 
 ```sh
