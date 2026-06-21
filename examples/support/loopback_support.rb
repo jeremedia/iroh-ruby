@@ -24,7 +24,7 @@ module Iroh
       end
 
       def normalize_payload(payload)
-        payload = payload.to_s
+        payload = payload.to_s.dup
         payload.force_encoding(Encoding::UTF_8)
         payload
       end

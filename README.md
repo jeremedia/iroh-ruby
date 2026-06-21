@@ -208,6 +208,31 @@ handler create, accept, and shutdown counts. Ruby-owned protocol callbacks are
 not exposed by the current UniFFI Ruby generator, so this demo uses a
 Rust-owned recorder object to prove the real router path.
 
+Run the JSON command bridge demo to exercise an application-shaped protocol:
+
+```sh
+bundle exec rake demo:json_command_bridge
+```
+
+Or run the server and client manually in two terminals. Start the server first:
+
+```sh
+bundle exec ruby examples/json_command_server.rb
+```
+
+Copy the printed ticket into the client command:
+
+```sh
+bundle exec ruby examples/json_command_client.rb "<ticket>" "hello from JSON"
+```
+
+The demo starts a ticket-addressed server and a separate client process, opens
+one Iroh connection, sends one JSON command per bidirectional stream, and
+returns structured JSON responses. The default command sequence exercises
+`echo`, `identify`, `stats`, an unsupported-command error, and `shutdown`.
+This is the consumer-copyable app skeleton: ticket discovery, ALPN selection,
+JSON request/response contracts, stream finishing, and explicit shutdown.
+
 ## Development
 
 Regenerate the Ruby UniFFI binding after changing `vendor/iroh-ffi`:

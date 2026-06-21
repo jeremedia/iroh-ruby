@@ -172,6 +172,23 @@ namespace :demo do
     ruby "examples/protocol_router.rb"
   end
 
+  desc "Run the JSON command bridge demo"
+  task json_command_bridge: "native:build" do
+    ruby "examples/json_command_bridge.rb"
+  end
+
+  desc "Run the JSON command bridge server"
+  task json_command_server: "native:build" do
+    ruby "examples/json_command_server.rb"
+  end
+
+  desc "Run the JSON command bridge client"
+  task :json_command_client, [:ticket, :message] => "native:build" do |_task, args|
+    abort "usage: bundle exec rake 'demo:json_command_client[ticket,message]'" unless args[:ticket]
+
+    ruby "examples/json_command_client.rb", args[:ticket], args[:message] || "hello from json bridge"
+  end
+
   desc "Run the endpoint watchers demo"
   task endpoint_watchers: "native:build" do
     ruby "examples/endpoint_watchers.rb"
