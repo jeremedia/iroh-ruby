@@ -13,6 +13,19 @@ addresses, tickets, relays, watchers, multipath snapshots, and
 `iroh-services`. The upstream FFI intentionally does not expose blobs, docs, or
 gossip yet.
 
+### Iroh 1.0 API coverage
+
+| Area | Status |
+|------|--------|
+| Endpoints, endpoint IDs, endpoint addresses, and endpoint tickets | Exposed |
+| Connections, bidirectional streams, unidirectional streams, and datagrams | Exposed |
+| Relay maps, relay modes, endpoint watchers, path snapshots, and telemetry | Exposed |
+| `iroh-services` client construction, metrics, ping, and diagnostics | Exposed |
+| Blobs, docs, and gossip | Not exposed by upstream `iroh-ffi` 1.0.0 |
+
+The public API inventory is locked in `test/fixtures/public_api_inventory.txt`.
+Intentional API surface changes should update that fixture in the same commit.
+
 ## Requirements
 
 - Ruby 3.2+
@@ -256,3 +269,22 @@ bundle exec rake smoke:installed_gem
 This builds the gem, installs it into a temporary `GEM_HOME`, runs Ruby outside
 the repository checkout, requires `iroh`, checks bundled native library lookup,
 and exercises a minimal key, endpoint, and ticket lifecycle.
+
+Run the full release-readiness gate:
+
+```sh
+bundle exec rake release:smoke
+```
+
+This runs the full test suite, every automated demo, the isolated installed-gem
+smoke, and whitespace checks. It does not publish the gem or create a tag.
+
+Print or refresh the public API inventory:
+
+```sh
+bundle exec rake api:inventory
+bundle exec rake api:inventory:update
+```
+
+Use `api:inventory:update` only when an intentional public API change should be
+recorded in `test/fixtures/public_api_inventory.txt`.

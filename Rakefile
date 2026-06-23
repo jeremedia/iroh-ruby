@@ -6,11 +6,24 @@ require "open3"
 require "rbconfig"
 require "timeout"
 require_relative "tasks/installed_gem_smoke"
+require_relative "tasks/public_api_inventory"
 
 ROOT = __dir__
 VENDOR_DIR = File.join(ROOT, "vendor", "iroh-ffi")
 NATIVE_DIR = File.join(ROOT, "lib", "iroh", "native")
 TARGET_DIR = File.join(ROOT, "tmp", "cargo-target")
+PUBLIC_API_INVENTORY_PATH = File.join(ROOT, "test", "fixtures", "public_api_inventory.txt")
+AUTOMATED_DEMO_TASKS = %w[
+  demo:postcard
+  demo:ticket_echo
+  demo:datagram_ping
+  demo:ticket_exchange
+  demo:connection_telemetry
+  demo:protocol_router
+  demo:json_command_bridge
+  demo:endpoint_watchers
+  demo:services_diagnostics
+].freeze
 
 def dynamic_library_filename
   case RbConfig::CONFIG.fetch("host_os")
@@ -204,6 +217,27 @@ namespace :smoke do
   desc "Build, install, and require the gem from an isolated consumer GEM_HOME"
   task :installed_gem do
     Iroh::Tasks::InstalledGemSmoke.run(root: ROOT)
+  end
+end
+
+namespace :api do
+  desc "Print the public API inventory"
+  task inventory: "native:build" do
+    puts Iroh::Tasks::PublicApiInventory.snapshot
+  end
+
+  desc "Refresh test/fixtures/public_api_inventory.txt"
+  task "inventory:update" => "native:build" do
+    FileUtils.mkdir_p(File.dirname(PUBLIC_API_INVENTORY_PATH))
+    File.write(PUBLIC_API_INVENTORY_PATH, Iroh::Tasks::PublicApiInventory.snapshot)
+  end
+end
+
+namespace :release do
+  desc "Run the full release-readiness smoke suite"
+  task smoke: ["test", *AUTOMATED_DEMO_TASKS, "smoke:installed_gem"] do
+    sh "git", "diff", "--check"
+    sh "git", "diff", "--cached", "--check"
   end
 end
 

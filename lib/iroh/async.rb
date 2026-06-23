@@ -146,6 +146,83 @@ end
 
 module IrohFfiAsyncPatches
   RustBuffer = IrohFfi::RustBuffer
+  Override = Struct.new(:target, :method_name, :scope, :arity, :ffi_function, keyword_init: true)
+
+  def self.override(target, method_name, scope, arity, ffi_function)
+    Override.new(
+      target: target,
+      method_name: method_name,
+      scope: scope,
+      arity: arity,
+      ffi_function: ffi_function
+    )
+  end
+
+  OVERRIDES = [
+    override("Accepting", :alpn, :instance, 0, :uniffi_iroh_ffi_fn_method_accepting_alpn),
+    override("Accepting", :connect, :instance, 0, :uniffi_iroh_ffi_fn_method_accepting_connect),
+
+    override("Connecting", :alpn, :instance, 0, :uniffi_iroh_ffi_fn_method_connecting_alpn),
+    override("Connecting", :connect, :instance, 0, :uniffi_iroh_ffi_fn_method_connecting_connect),
+    override("Connecting", :remote_id, :instance, 0, :uniffi_iroh_ffi_fn_method_connecting_remote_id),
+
+    override("Incoming", :accept, :instance, 0, :uniffi_iroh_ffi_fn_method_incoming_accept),
+    override("Incoming", :ignore, :instance, 0, :uniffi_iroh_ffi_fn_method_incoming_ignore),
+    override("Incoming", :local_addr, :instance, 0, :uniffi_iroh_ffi_fn_method_incoming_local_addr),
+    override("Incoming", :refuse, :instance, 0, :uniffi_iroh_ffi_fn_method_incoming_refuse),
+    override("Incoming", :remote_addr, :instance, 0, :uniffi_iroh_ffi_fn_method_incoming_remote_addr),
+    override("Incoming", :remote_addr_validated, :instance, 0,
+             :uniffi_iroh_ffi_fn_method_incoming_remote_addr_validated),
+    override("Incoming", :retry, :instance, 0, :uniffi_iroh_ffi_fn_method_incoming_retry),
+
+    override("Endpoint", :bind, :singleton, 1, :uniffi_iroh_ffi_fn_constructor_endpoint_bind),
+    override("Endpoint", :accept_next, :instance, 0, :uniffi_iroh_ffi_fn_method_endpoint_accept_next),
+    override("Endpoint", :add_external_addr, :instance, 1, :uniffi_iroh_ffi_fn_method_endpoint_add_external_addr),
+    override("Endpoint", :close, :instance, 0, :uniffi_iroh_ffi_fn_method_endpoint_close),
+    override("Endpoint", :connect, :instance, 2, :uniffi_iroh_ffi_fn_method_endpoint_connect),
+    override("Endpoint", :connect_pending, :instance, 2, :uniffi_iroh_ffi_fn_method_endpoint_connect_pending),
+    override("Endpoint", :insert_relay, :instance, 1, :uniffi_iroh_ffi_fn_method_endpoint_insert_relay),
+    override("Endpoint", :online, :instance, 0, :uniffi_iroh_ffi_fn_method_endpoint_online),
+    override("Endpoint", :remote_addr, :instance, 1, :uniffi_iroh_ffi_fn_method_endpoint_remote_addr),
+    override("Endpoint", :remove_external_addr, :instance, 1, :uniffi_iroh_ffi_fn_method_endpoint_remove_external_addr),
+    override("Endpoint", :remove_relay, :instance, 1, :uniffi_iroh_ffi_fn_method_endpoint_remove_relay),
+
+    override("Connection", :accept_bi, :instance, 0, :uniffi_iroh_ffi_fn_method_connection_accept_bi),
+    override("Connection", :accept_uni, :instance, 0, :uniffi_iroh_ffi_fn_method_connection_accept_uni),
+    override("Connection", :closed, :instance, 0, :uniffi_iroh_ffi_fn_method_connection_closed),
+    override("Connection", :open_bi, :instance, 0, :uniffi_iroh_ffi_fn_method_connection_open_bi),
+    override("Connection", :open_uni, :instance, 0, :uniffi_iroh_ffi_fn_method_connection_open_uni),
+    override("Connection", :read_datagram, :instance, 0, :uniffi_iroh_ffi_fn_method_connection_read_datagram),
+    override("Connection", :send_datagram_wait, :instance, 1,
+             :uniffi_iroh_ffi_fn_method_connection_send_datagram_wait),
+
+    override("RecvStream", :bytes_read, :instance, 0, :uniffi_iroh_ffi_fn_method_recvstream_bytes_read),
+    override("RecvStream", :id, :instance, 0, :uniffi_iroh_ffi_fn_method_recvstream_id),
+    override("RecvStream", :read, :instance, 1, :uniffi_iroh_ffi_fn_method_recvstream_read),
+    override("RecvStream", :read_exact, :instance, 1, :uniffi_iroh_ffi_fn_method_recvstream_read_exact),
+    override("RecvStream", :read_to_end, :instance, 1, :uniffi_iroh_ffi_fn_method_recvstream_read_to_end),
+    override("RecvStream", :received_reset, :instance, 0, :uniffi_iroh_ffi_fn_method_recvstream_received_reset),
+    override("RecvStream", :stop, :instance, 1, :uniffi_iroh_ffi_fn_method_recvstream_stop),
+
+    override("SendStream", :finish, :instance, 0, :uniffi_iroh_ffi_fn_method_sendstream_finish),
+    override("SendStream", :id, :instance, 0, :uniffi_iroh_ffi_fn_method_sendstream_id),
+    override("SendStream", :priority, :instance, 0, :uniffi_iroh_ffi_fn_method_sendstream_priority),
+    override("SendStream", :reset, :instance, 1, :uniffi_iroh_ffi_fn_method_sendstream_reset),
+    override("SendStream", :set_priority, :instance, 1, :uniffi_iroh_ffi_fn_method_sendstream_set_priority),
+    override("SendStream", :stopped, :instance, 0, :uniffi_iroh_ffi_fn_method_sendstream_stopped),
+    override("SendStream", :write, :instance, 1, :uniffi_iroh_ffi_fn_method_sendstream_write),
+    override("SendStream", :write_all, :instance, 1, :uniffi_iroh_ffi_fn_method_sendstream_write_all),
+
+    override("ServicesClient", :create, :singleton, 2, :uniffi_iroh_ffi_fn_constructor_servicesclient_create),
+    override("ServicesClient", :name, :instance, 0, :uniffi_iroh_ffi_fn_method_servicesclient_name),
+    override("ServicesClient", :ping, :instance, 0, :uniffi_iroh_ffi_fn_method_servicesclient_ping),
+    override("ServicesClient", :push_metrics, :instance, 0, :uniffi_iroh_ffi_fn_method_servicesclient_push_metrics),
+    override("ServicesClient", :set_name, :instance, 1, :uniffi_iroh_ffi_fn_method_servicesclient_set_name),
+    override("ServicesClient", :submit_network_diagnostics, :instance, 1,
+             :uniffi_iroh_ffi_fn_method_servicesclient_submit_network_diagnostics),
+
+    override("WatchHandle", :stop, :instance, 0, :uniffi_iroh_ffi_fn_method_watchhandle_stop)
+  ].freeze
 
   def self.install!
     with_redefinition_warnings_suppressed do
