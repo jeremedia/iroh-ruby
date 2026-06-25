@@ -26,15 +26,6 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
-      - name: Run test suite
-        run: bundle exec rake test TESTOPTS="--verbose"
-        timeout-minutes: 15
-      - run: bundle exec rake demo:ticket_exchange
-      - run: bundle exec rake demo:connection_telemetry
-      - run: bundle exec rake demo:protocol_router
-      - run: bundle exec rake demo:json_command_bridge
-      - run: bundle exec rake demo:endpoint_watchers
-      - run: bundle exec rake demo:services_diagnostics
-      - name: Run installed gem smoke
-        run: bundle exec rake smoke:installed_gem
-        timeout-minutes: 15
+      - name: Run release smoke
+        run: bundle exec rake release:smoke
+        timeout-minutes: 30
