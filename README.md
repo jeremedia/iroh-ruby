@@ -246,6 +246,31 @@ returns structured JSON responses. The default command sequence exercises
 This is the consumer-copyable app skeleton: ticket discovery, ALPN selection,
 JSON request/response contracts, stream finishing, and explicit shutdown.
 
+Run the Rails pair demo to prove two Rails applications can communicate through
+the gem:
+
+```sh
+bundle exec rake demo:rails_pair
+```
+
+Or run the two minimal Rails apps manually. Start the server app first:
+
+```sh
+ruby examples/rails_pair/server_app/bin/rails runner RailsPairServer::Runner.run
+```
+
+Copy the printed ticket into the client app:
+
+```sh
+IROH_RAILS_PAIR_TICKET="<ticket>" ruby examples/rails_pair/client_app/bin/rails runner RailsPairClient::Runner.run
+```
+
+The demo boots a server Rails app and a client Rails app as separate processes,
+loads app-local initializers, exchanges the same structured JSON command
+sequence over Iroh bidirectional streams, and shuts the server down explicitly.
+It proves Rails process integration and lifecycle wiring; it is not a Rails
+engine or production deployment recipe.
+
 ## Development
 
 Regenerate the Ruby UniFFI binding after changing `vendor/iroh-ffi`:

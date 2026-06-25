@@ -23,6 +23,7 @@ Gem::Specification.new do |spec|
     Dir[
       "lib/**/*.rb",
       "examples/**/*.rb",
+      "examples/rails_pair/**/bin/*",
       "ext/**/*",
       "vendor/iroh-ffi/{Cargo.toml,Cargo.lock,build.rs,iroh.pc.in,uniffi.toml,uniffi-bindgen.rs,LICENSE-*}",
       "vendor/iroh-ffi/src/**/*.rs",
@@ -39,4 +40,5 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "minitest", "~> 5.25"
   spec.add_development_dependency "rake", "~> 13.2"
+  spec.add_development_dependency "rails", "~> 8.1.0"
 end

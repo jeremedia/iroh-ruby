@@ -21,6 +21,7 @@ AUTOMATED_DEMO_TASKS = %w[
   demo:connection_telemetry
   demo:protocol_router
   demo:json_command_bridge
+  demo:rails_pair
   demo:endpoint_watchers
   demo:services_diagnostics
 ].freeze
@@ -200,6 +201,11 @@ namespace :demo do
     abort "usage: bundle exec rake 'demo:json_command_client[ticket,message]'" unless args[:ticket]
 
     ruby "examples/json_command_client.rb", args[:ticket], args[:message] || "hello from json bridge"
+  end
+
+  desc "Run the Rails pair demo"
+  task rails_pair: "native:build" do
+    ruby "examples/rails_pair.rb"
   end
 
   desc "Run the endpoint watchers demo"
