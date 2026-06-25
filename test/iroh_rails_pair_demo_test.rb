@@ -18,6 +18,13 @@ class IrohRailsPairDemoTest < Minitest::Test
     assert_equal "ticket is required", error.message
   end
 
+  def test_delegates_json_encoding_to_public_bridge
+    command = { request_id: "1", op: "echo", params: { message: "hello" } }
+
+    assert_equal Iroh::JsonBridge.encode_command(command),
+                 Iroh::Examples::RailsPairDemo.encode_command(command)
+  end
+
   def test_exchanges_json_commands_between_two_rails_apps
     message = "hello rails pair"
     result = Iroh::Examples::RailsPairDemo.run_process_demo(message, timeout: 25)

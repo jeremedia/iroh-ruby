@@ -65,6 +65,57 @@ puts ticket.to_s
 endpoint.close
 ```
 
+### JSON bridge API
+
+`Iroh::JsonBridge` provides a small Ruby-level command bridge on top of
+ticket-addressed endpoints and bidirectional streams. It is intended for app
+integration demos and simple service protocols; lower-level endpoint, stream,
+and datagram APIs remain available directly under `Iroh`.
+
+```ruby
+require "iroh"
+
+alpn = "my-app/json"
+endpoint_options = Iroh::EndpointOptions.new(
+  preset: Iroh.preset_minimal,
+  relay_mode: Iroh::RelayMode.disabled,
+  bind_addr: "127.0.0.1:0",
+  alpns: [alpn]
+)
+
+router = Iroh::JsonBridge::CommandRouter.new
+router.on("echo") do |command, _context|
+  { "message" => command.dig("params", "message").to_s }
+end
+router.on("shutdown") { { "shutdown" => true } }
+
+server = Iroh::JsonBridge::Server.new(
+  endpoint_options: endpoint_options,
+  alpn: alpn,
+  router: router
+)
+
+# Server process: prints a ticket and handles commands until shutdown.
+server.run_once(out: $stdout)
+
+# Client process: pass the server's printed ticket as ARGV[0].
+ticket = ARGV.fetch(0)
+client = Iroh::JsonBridge::Client.new(
+  endpoint_options: endpoint_options,
+  alpn: alpn
+)
+client.deliver(ticket, [
+  { request_id: "1", op: "echo", params: { message: "hello" } },
+  { request_id: "2", op: "shutdown" }
+])
+```
+
+The bridge serializes commands and responses as JSON objects, sends one command
+per bidirectional stream, preserves request ids and operation names, and returns
+structured success/error responses. See `examples/json_command_server.rb`,
+`examples/json_command_client.rb`, and `examples/rails_pair/` for complete
+process orchestration.
+
 ## Demo
 
 Run the postcard demo through Rake:

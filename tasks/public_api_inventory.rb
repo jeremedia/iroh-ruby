@@ -22,19 +22,31 @@ module Iroh
         end
 
         Iroh::PUBLIC_CONSTANTS.map(&:to_s).sort.each do |constant_name|
-          klass = Iroh.const_get(constant_name)
-          lines << "Iroh::#{constant_name}"
+          append_constant(lines, Iroh, "Iroh", constant_name)
+        end
 
-          klass.singleton_methods(false).map(&:to_s).sort.each do |method_name|
-            lines << "Iroh::#{constant_name}.#{method_name}"
-          end
-
-          klass.instance_methods(false).map(&:to_s).sort.each do |method_name|
-            lines << "Iroh::#{constant_name}##{method_name}"
+        Iroh::PUBLIC_RUBY_CONSTANTS.sort_by { |constant_name, _children| constant_name.to_s }.each do |constant_name, children|
+          append_constant(lines, Iroh, "Iroh", constant_name)
+          parent = Iroh.const_get(constant_name)
+          children.map(&:to_s).sort.each do |child_name|
+            append_constant(lines, parent, "Iroh::#{constant_name}", child_name)
           end
         end
 
         "#{lines.join("\n")}\n"
+      end
+
+      def append_constant(lines, container, namespace, constant_name)
+        klass = container.const_get(constant_name)
+        lines << "#{namespace}::#{constant_name}"
+
+        klass.singleton_methods(false).map(&:to_s).sort.each do |method_name|
+          lines << "#{namespace}::#{constant_name}.#{method_name}"
+        end
+
+        klass.instance_methods(false).map(&:to_s).sort.each do |method_name|
+          lines << "#{namespace}::#{constant_name}##{method_name}"
+        end
       end
     end
   end

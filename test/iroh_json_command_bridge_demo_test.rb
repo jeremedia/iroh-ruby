@@ -23,6 +23,8 @@ class IrohJsonCommandBridgeDemoTest < Minitest::Test
       Iroh::Examples::JsonCommandBridgeDemo.encode_command(command)
     )
 
+    assert_equal Iroh::JsonBridge.encode_command(command),
+                 Iroh::Examples::JsonCommandBridgeDemo.encode_command(command)
     assert_equal(
       {
         "request_id" => "42",
@@ -56,6 +58,8 @@ class IrohJsonCommandBridgeDemoTest < Minitest::Test
     )
 
     refute response.fetch("ok")
+    assert_equal Iroh::JsonBridge.error_response("nope", "missing", "unsupported command: missing"),
+                 response
     assert_equal "nope", response.fetch("request_id")
     assert_equal "missing", response.fetch("op")
     assert_equal "unsupported command: missing", response.fetch("error")

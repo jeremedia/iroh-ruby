@@ -2,8 +2,9 @@
 
 require "open3"
 require "rbconfig"
+require "timeout"
 
-require_relative "json_command_bridge_demo"
+require "iroh"
 
 module Iroh
   module Examples
@@ -17,94 +18,122 @@ module Iroh
       module_function
 
       def default_commands(message = DEFAULT_MESSAGE)
-        JsonCommandBridgeDemo.default_commands(message)
+        message = normalize_message(message)
+        [
+          { "request_id" => "1", "op" => "echo", "params" => { "message" => message } },
+          { "request_id" => "2", "op" => "identify" },
+          { "request_id" => "3", "op" => "stats" },
+          { "request_id" => "4", "op" => "does-not-exist" },
+          { "request_id" => "5", "op" => "shutdown" }
+        ]
+      end
+
+      def endpoint_options
+        Iroh::EndpointOptions.new(
+          preset: Iroh.preset_minimal,
+          relay_mode: Iroh::RelayMode.disabled,
+          bind_addr: "127.0.0.1:0",
+          alpns: [ALPN]
+        )
+      end
+
+      def router
+        Iroh::JsonBridge::CommandRouter.new.tap do |router|
+          router.on("echo") do |command, _context|
+            { "message" => command.dig("params", "message").to_s }
+          end
+          router.on("identify") do |_command, context|
+            {
+              "server_id" => context.fetch(:server_id),
+              "remote_id" => context.fetch(:remote_id),
+              "alpn" => ALPN,
+              "server_app" => context.fetch(:server_app),
+              "rails_env" => context.fetch(:rails_env),
+              "rails_version" => context.fetch(:rails_version)
+            }
+          end
+          router.on("stats") do |_command, context|
+            {
+              "handled_commands" => context.fetch(:handled_commands),
+              "connection_stable_id" => context.fetch(:connection_stable_id),
+              "paths" => context.fetch(:paths),
+              "server_app" => context.fetch(:server_app)
+            }
+          end
+          router.on("shutdown") do |_command, _context|
+            { "shutdown" => true }
+          end
+        end
       end
 
       def normalize_ticket(ticket)
-        JsonCommandBridgeDemo.normalize_ticket(ticket)
+        Iroh::JsonBridge.normalize_ticket(ticket)
       end
 
       def normalize_message(message)
-        JsonCommandBridgeDemo.normalize_message(message)
+        Iroh::JsonBridge.normalize_message(message)
       end
 
       def normalize_timeout_seconds(timeout)
-        JsonCommandBridgeDemo.normalize_timeout_seconds(timeout)
+        seconds = Float(timeout)
+        raise ArgumentError, "timeout must be positive" unless seconds.positive?
+
+        seconds
       end
 
       def monotonic_time
-        JsonCommandBridgeDemo.monotonic_time
+        Process.clock_gettime(Process::CLOCK_MONOTONIC)
       end
 
       def with_deadline_timeout(deadline, message)
-        JsonCommandBridgeDemo.with_deadline_timeout(deadline, message) { yield }
+        timeout_seconds = remaining_timeout(deadline, message)
+        Timeout.timeout(timeout_seconds, Timeout::Error,
+                        "#{message} after #{format_timeout_seconds(timeout_seconds)} seconds") do
+          yield
+        end
       end
 
       def encode_response(response)
-        JsonCommandBridgeDemo.encode_response(response)
+        Iroh::JsonBridge.encode_response(response)
       end
 
       def decode_response(payload)
-        JsonCommandBridgeDemo.decode_response(payload)
+        Iroh::JsonBridge.decode_response(payload)
       end
 
       def encode_command(command)
-        JsonCommandBridgeDemo.encode_command(command)
+        Iroh::JsonBridge.encode_command(command)
       end
 
       def decode_command(payload)
-        JsonCommandBridgeDemo.decode_command(payload)
+        Iroh::JsonBridge.decode_command(payload)
       end
 
       def response_lines(stdout)
-        JsonCommandBridgeDemo.response_lines(stdout)
+        stdout.each_line.filter_map do |line|
+          next unless line.start_with?("response: ")
+
+          decode_response(line.sub(/\Aresponse:\s*/, ""))
+        end
       end
 
       def shutdown_response?(response)
-        JsonCommandBridgeDemo.shutdown_response?(response)
-      end
-
-      def bind_endpoint
-        LoopbackSupport.bind_endpoint(ALPN)
-      end
-
-      def close_endpoint(endpoint)
-        LoopbackSupport.close_endpoint(endpoint)
+        Iroh::JsonBridge.shutdown_response?(response)
       end
 
       def response_for(command, context)
-        command = JsonCommandBridgeDemo.stringify_keys(command)
-        request_id = command["request_id"]
-        op = command["op"].to_s
+        router.call(command, context)
+      end
 
-        case op
-        when "echo"
-          JsonCommandBridgeDemo.ok_response(request_id, op, "message" => command.dig("params", "message").to_s)
-        when "identify"
-          JsonCommandBridgeDemo.ok_response(
-            request_id,
-            op,
-            "server_id" => context.fetch(:server_id),
-            "remote_id" => context.fetch(:remote_id),
-            "alpn" => ALPN,
-            "server_app" => context.fetch(:server_app),
-            "rails_env" => context.fetch(:rails_env),
-            "rails_version" => context.fetch(:rails_version)
-          )
-        when "stats"
-          JsonCommandBridgeDemo.ok_response(
-            request_id,
-            op,
-            "handled_commands" => context.fetch(:handled_commands),
-            "connection_stable_id" => context.fetch(:connection_stable_id),
-            "paths" => context.fetch(:paths),
-            "server_app" => context.fetch(:server_app)
-          )
-        when "shutdown"
-          JsonCommandBridgeDemo.ok_response(request_id, op, "shutdown" => true)
-        else
-          JsonCommandBridgeDemo.error_response(request_id, op, "unsupported command: #{op}")
-        end
+      def remaining_timeout(deadline, message)
+        remaining = deadline - monotonic_time
+        return remaining if remaining.positive?
+
+        raise Timeout::Error, message
+      end
+
+      def format_timeout_seconds(seconds)
+        seconds == seconds.to_i ? seconds.to_i.to_s : seconds.to_s
       end
 
       def run_process_demo(message = DEFAULT_MESSAGE, timeout: DEFAULT_TIMEOUT_SECONDS)
@@ -215,104 +244,28 @@ module Iroh
 
         def run_once(timeout: RailsPairDemo::DEFAULT_TIMEOUT_SECONDS, out: $stdout,
                      app_name: "server_app", rails_env: "development", rails_version: nil)
-          timeout_seconds = RailsPairDemo.normalize_timeout_seconds(timeout)
-          deadline = RailsPairDemo.monotonic_time + timeout_seconds
-          server = RailsPairDemo.with_deadline_timeout(deadline, "timed out binding Rails pair server endpoint") do
-            RailsPairDemo.bind_endpoint
-          end
-          server_id = server.id.to_s
-          ticket = Iroh::EndpointTicket.from_addr(server.addr).to_s
           rails_version ||= defined?(Rails) ? Rails.version : "unknown"
-
-          out.puts "ticket: #{ticket}"
-          out.flush if out.respond_to?(:flush)
-
-          incoming = RailsPairDemo.with_deadline_timeout(deadline, "timed out waiting for Rails pair client") do
-            server.accept_next
-          end
-          raise "Rails pair server endpoint closed before accepting a connection" unless incoming
-
-          accepting = RailsPairDemo.with_deadline_timeout(deadline, "timed out accepting Rails pair client") do
-            incoming.accept
-          end
-          connection = RailsPairDemo.with_deadline_timeout(deadline, "timed out establishing Rails pair connection") do
-            accepting.connect
-          end
-
-          responses = handle_connection(
-            server,
-            connection,
-            deadline,
-            app_name: app_name,
-            rails_env: rails_env,
-            rails_version: rails_version
-          )
-          RailsPairDemo.with_deadline_timeout(deadline, "timed out waiting for Rails pair client close") do
-            connection.closed
-          end
-          RailsPairDemo.close_endpoint(server)
-
-          Result.new(
-            server_id: server_id,
-            ticket: ticket,
+          result = Iroh::JsonBridge::Server.new(
+            endpoint_options: RailsPairDemo.endpoint_options,
             alpn: RailsPairDemo::ALPN,
-            responses: responses,
-            handled_commands: responses.length,
-            server_closed: server.is_closed,
-            app_name: app_name
-          )
-        ensure
-          RailsPairDemo.close_endpoint(server)
-        end
-
-        def handle_connection(server, connection, deadline, app_name:, rails_env:, rails_version:)
-          responses = []
-
-          JsonCommandBridgeDemo::MAX_COMMANDS.times do
-            stream = RailsPairDemo.with_deadline_timeout(deadline, "timed out accepting Rails pair stream") do
-              connection.accept_bi
-            end
-            payload = RailsPairDemo.with_deadline_timeout(deadline, "timed out reading Rails pair command") do
-              stream.recv.read_to_end(JsonCommandBridgeDemo::MAX_PAYLOAD_BYTES)
-            end
-            response = response_for_payload(
-              payload,
-              server: server,
-              connection: connection,
-              handled_commands: responses.length + 1,
-              app_name: app_name,
+            router: RailsPairDemo.router,
+            timeout: timeout,
+            context: {
+              server_app: app_name,
               rails_env: rails_env,
               rails_version: rails_version
-            )
-            RailsPairDemo.with_deadline_timeout(deadline, "timed out writing Rails pair response") do
-              stream.send.write_all(RailsPairDemo.encode_response(response))
-            end
-            RailsPairDemo.with_deadline_timeout(deadline, "timed out finishing Rails pair response") do
-              stream.send.finish
-            end
+            }
+          ).run_once(out: out)
 
-            responses << response
-            break if RailsPairDemo.shutdown_response?(response)
-          end
-
-          responses
-        end
-
-        def response_for_payload(payload, server:, connection:, handled_commands:, app_name:, rails_env:, rails_version:)
-          command = RailsPairDemo.decode_command(payload)
-          RailsPairDemo.response_for(
-            command,
-            server_id: server.id.to_s,
-            remote_id: connection.remote_id.to_s,
-            handled_commands: handled_commands,
-            connection_stable_id: connection.stable_id,
-            paths: connection.paths.length,
-            server_app: app_name,
-            rails_env: rails_env,
-            rails_version: rails_version
+          Result.new(
+            server_id: result.server_id,
+            ticket: result.ticket,
+            alpn: result.alpn,
+            responses: result.responses,
+            handled_commands: result.handled_commands,
+            server_closed: result.server_closed,
+            app_name: app_name
           )
-        rescue JSON::ParserError, ArgumentError => e
-          JsonCommandBridgeDemo.error_response(nil, "invalid", e.message)
         end
       end
 
@@ -333,56 +286,22 @@ module Iroh
 
         def deliver(ticket, commands = RailsPairDemo.default_commands,
                     timeout: RailsPairDemo::DEFAULT_TIMEOUT_SECONDS, app_name: "client_app")
-          timeout_seconds = RailsPairDemo.normalize_timeout_seconds(timeout)
-          deadline = RailsPairDemo.monotonic_time + timeout_seconds
-          ticket = RailsPairDemo.normalize_ticket(ticket)
-          commands = commands.map { |command| JsonCommandBridgeDemo.stringify_keys(command) }
-          parsed_addr = RailsPairDemo.with_deadline_timeout(deadline, "timed out parsing Rails pair ticket") do
-            Iroh::EndpointTicket.from_string(ticket).endpoint_addr
-          end
-          sender = RailsPairDemo.with_deadline_timeout(deadline, "timed out binding Rails pair client endpoint") do
-            RailsPairDemo.bind_endpoint
-          end
-          sender_id = sender.id.to_s
-          receiver_id = parsed_addr.id.to_s
-          connection = RailsPairDemo.with_deadline_timeout(deadline, "timed out connecting Rails pair client") do
-            sender.connect(parsed_addr, RailsPairDemo::ALPN)
-          end
-          responses = commands.map do |command|
-            send_command(connection, command, deadline)
-          end
-
-          RailsPairDemo.close_endpoint(sender)
+          result = Iroh::JsonBridge::Client.new(
+            endpoint_options: RailsPairDemo.endpoint_options,
+            alpn: RailsPairDemo::ALPN,
+            timeout: timeout
+          ).deliver(ticket, commands)
 
           Result.new(
-            sender_id: sender_id,
-            receiver_id: receiver_id,
-            ticket: ticket,
-            alpn: RailsPairDemo::ALPN,
-            commands: commands,
-            responses: responses,
-            sender_closed: sender.is_closed,
+            sender_id: result.sender_id,
+            receiver_id: result.receiver_id,
+            ticket: result.ticket,
+            alpn: result.alpn,
+            commands: result.commands,
+            responses: result.responses,
+            sender_closed: result.sender_closed,
             app_name: app_name
           )
-        ensure
-          RailsPairDemo.close_endpoint(sender)
-        end
-
-        def send_command(connection, command, deadline)
-          stream = RailsPairDemo.with_deadline_timeout(deadline, "timed out opening Rails pair stream") do
-            connection.open_bi
-          end
-          RailsPairDemo.with_deadline_timeout(deadline, "timed out writing Rails pair command") do
-            stream.send.write_all(RailsPairDemo.encode_command(command))
-          end
-          RailsPairDemo.with_deadline_timeout(deadline, "timed out finishing Rails pair command") do
-            stream.send.finish
-          end
-          payload = RailsPairDemo.with_deadline_timeout(deadline, "timed out reading Rails pair response") do
-            stream.recv.read_to_end(JsonCommandBridgeDemo::MAX_PAYLOAD_BYTES)
-          end
-
-          RailsPairDemo.decode_response(payload)
         end
       end
     end

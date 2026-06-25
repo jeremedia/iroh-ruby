@@ -113,6 +113,15 @@ module Iroh
             ticket = Iroh::EndpointTicket.from_addr(endpoint.addr).to_s
             raise "empty endpoint ticket" if ticket.empty?
 
+            command = Iroh::JsonBridge.decode_command(
+              Iroh::JsonBridge.encode_command(
+                request_id: "smoke",
+                op: "echo",
+                params: { message: "json bridge smoke" }
+              )
+            )
+            raise "json bridge command did not round trip" unless command["op"] == "echo"
+
             endpoint.close
             raise "endpoint did not close" unless endpoint.is_closed
 

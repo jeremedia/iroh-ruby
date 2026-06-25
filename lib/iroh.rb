@@ -97,3 +97,15 @@ module Iroh
     IrohFfi.set_log_level(level)
   end
 end
+
+require_relative "iroh/json_bridge"
+
+module Iroh
+  PUBLIC_RUBY_CONSTANTS = {
+    JsonBridge: %i[
+      Client
+      CommandRouter
+      Server
+    ]
+  }.freeze
+end

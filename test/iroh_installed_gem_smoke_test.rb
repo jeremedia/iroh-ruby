@@ -43,6 +43,8 @@ class IrohInstalledGemSmokeTest < Minitest::Test
     assert_includes script, "Iroh::SecretKey.generate"
     assert_includes script, "Iroh::Endpoint.bind"
     assert_includes script, "Iroh::EndpointTicket.from_addr"
+    assert_includes script, "Iroh::JsonBridge.encode_command"
+    assert_includes script, "Iroh::JsonBridge.decode_command"
     refute_includes script, "$LOAD_PATH.unshift"
     refute_includes script, "-Ilib"
   end

@@ -1,19 +1,19 @@
 # frozen_string_literal: true
 
-require "json"
 require "open3"
 require "rbconfig"
+require "timeout"
 
-require_relative "loopback_support"
+require "iroh"
 
 module Iroh
   module Examples
     module JsonCommandBridgeDemo
       ALPN = "iroh-ruby/demo/json-command-bridge"
       DEFAULT_MESSAGE = "hello from json bridge"
-      DEFAULT_TIMEOUT_SECONDS = 15
-      MAX_PAYLOAD_BYTES = 1_048_576
-      MAX_COMMANDS = 16
+      DEFAULT_TIMEOUT_SECONDS = Iroh::JsonBridge::DEFAULT_TIMEOUT_SECONDS
+      MAX_PAYLOAD_BYTES = Iroh::JsonBridge::MAX_PAYLOAD_BYTES
+      MAX_COMMANDS = Iroh::JsonBridge::MAX_COMMANDS
       SERVER_SCRIPT_PATH = File.expand_path("../json_command_server.rb", __dir__)
       CLIENT_SCRIPT_PATH = File.expand_path("../json_command_client.rb", __dir__)
 
@@ -30,113 +30,101 @@ module Iroh
         ]
       end
 
-      def normalize_ticket(ticket)
-        ticket.to_s.strip.tap do |value|
-          raise ArgumentError, "ticket is required" if value.empty?
+      def endpoint_options
+        Iroh::EndpointOptions.new(
+          preset: Iroh.preset_minimal,
+          relay_mode: Iroh::RelayMode.disabled,
+          bind_addr: "127.0.0.1:0",
+          alpns: [ALPN]
+        )
+      end
+
+      def router
+        Iroh::JsonBridge::CommandRouter.new.tap do |router|
+          router.on("echo") do |command, _context|
+            { "message" => command.dig("params", "message").to_s }
+          end
+          router.on("identify") do |_command, context|
+            {
+              "server_id" => context.fetch(:server_id),
+              "remote_id" => context.fetch(:remote_id),
+              "alpn" => ALPN
+            }
+          end
+          router.on("stats") do |_command, context|
+            {
+              "handled_commands" => context.fetch(:handled_commands),
+              "connection_stable_id" => context.fetch(:connection_stable_id),
+              "paths" => context.fetch(:paths)
+            }
+          end
+          router.on("shutdown") do |_command, _context|
+            { "shutdown" => true }
+          end
         end
+      end
+
+      def normalize_ticket(ticket)
+        Iroh::JsonBridge.normalize_ticket(ticket)
       end
 
       def normalize_message(message)
-        LoopbackSupport.normalize_message(message)
+        Iroh::JsonBridge.normalize_message(message)
       end
 
       def normalize_payload(payload)
-        LoopbackSupport.normalize_payload(payload)
-      end
-
-      def bind_endpoint
-        LoopbackSupport.bind_endpoint(ALPN)
-      end
-
-      def close_endpoint(endpoint)
-        LoopbackSupport.close_endpoint(endpoint)
+        Iroh::JsonBridge.normalize_payload(payload)
       end
 
       def with_deadline_timeout(deadline, message)
-        LoopbackSupport.with_deadline_timeout(deadline, message) { yield }
-      end
-
-      def normalize_timeout_seconds(timeout)
-        LoopbackSupport.normalize_timeout_seconds(timeout)
-      end
-
-      def monotonic_time
-        LoopbackSupport.monotonic_time
-      end
-
-      def encode_command(command)
-        JSON.generate(stringify_keys(command))
-      end
-
-      def decode_command(payload)
-        decoded = JSON.parse(normalize_payload(payload))
-        raise ArgumentError, "JSON command must be an object" unless decoded.is_a?(Hash)
-
-        decoded
-      end
-
-      def encode_response(response)
-        JSON.generate(stringify_keys(response))
-      end
-
-      def decode_response(payload)
-        decoded = JSON.parse(normalize_payload(payload))
-        raise ArgumentError, "JSON response must be an object" unless decoded.is_a?(Hash)
-
-        decoded
-      end
-
-      def response_for(command, context)
-        command = stringify_keys(command)
-        request_id = command["request_id"]
-        op = command["op"].to_s
-
-        case op
-        when "echo"
-          ok_response(request_id, op, "message" => command.dig("params", "message").to_s)
-        when "identify"
-          ok_response(
-            request_id,
-            op,
-            "server_id" => context.fetch(:server_id),
-            "remote_id" => context.fetch(:remote_id),
-            "alpn" => ALPN
-          )
-        when "stats"
-          ok_response(
-            request_id,
-            op,
-            "handled_commands" => context.fetch(:handled_commands),
-            "connection_stable_id" => context.fetch(:connection_stable_id),
-            "paths" => context.fetch(:paths)
-          )
-        when "shutdown"
-          ok_response(request_id, op, "shutdown" => true)
-        else
-          error_response(request_id, op, "unsupported command: #{op}")
+        timeout_seconds = remaining_timeout(deadline, message)
+        Timeout.timeout(timeout_seconds, Timeout::Error,
+                        "#{message} after #{format_timeout_seconds(timeout_seconds)} seconds") do
+          yield
         end
       end
 
+      def normalize_timeout_seconds(timeout)
+        seconds = Float(timeout)
+        raise ArgumentError, "timeout must be positive" unless seconds.positive?
+
+        seconds
+      end
+
+      def monotonic_time
+        Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      end
+
+      def encode_command(command)
+        Iroh::JsonBridge.encode_command(command)
+      end
+
+      def decode_command(payload)
+        Iroh::JsonBridge.decode_command(payload)
+      end
+
+      def encode_response(response)
+        Iroh::JsonBridge.encode_response(response)
+      end
+
+      def decode_response(payload)
+        Iroh::JsonBridge.decode_response(payload)
+      end
+
+      def response_for(command, context)
+        router.call(command, context)
+      end
+
       def ok_response(request_id, op, result)
-        {
-          "ok" => true,
-          "request_id" => request_id,
-          "op" => op,
-          "result" => result
-        }
+        Iroh::JsonBridge.ok_response(request_id, op, result)
       end
 
       def error_response(request_id, op, error)
-        {
-          "ok" => false,
-          "request_id" => request_id,
-          "op" => op,
-          "error" => error
-        }
+        Iroh::JsonBridge.error_response(request_id, op, error)
       end
 
       def shutdown_response?(response)
-        response["ok"] && response["op"] == "shutdown" && response.dig("result", "shutdown")
+        Iroh::JsonBridge.shutdown_response?(response)
       end
 
       def stringify_keys(value)
@@ -150,6 +138,17 @@ module Iroh
         else
           value
         end
+      end
+
+      def remaining_timeout(deadline, message)
+        remaining = deadline - monotonic_time
+        return remaining if remaining.positive?
+
+        raise Timeout::Error, message
+      end
+
+      def format_timeout_seconds(seconds)
+        seconds == seconds.to_i ? seconds.to_i.to_s : seconds.to_s
       end
 
       def response_lines(stdout)
@@ -242,170 +241,28 @@ module Iroh
       )
 
       module Server
-        Result = Struct.new(
-          :server_id,
-          :ticket,
-          :alpn,
-          :responses,
-          :handled_commands,
-          :server_closed,
-          keyword_init: true
-        )
-
         module_function
 
         def run_once(timeout: JsonCommandBridgeDemo::DEFAULT_TIMEOUT_SECONDS, out: $stdout)
-          timeout_seconds = JsonCommandBridgeDemo.normalize_timeout_seconds(timeout)
-          deadline = JsonCommandBridgeDemo.monotonic_time + timeout_seconds
-          server = JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out binding JSON command server endpoint") do
-            JsonCommandBridgeDemo.bind_endpoint
-          end
-          server_id = server.id.to_s
-          ticket = Iroh::EndpointTicket.from_addr(server.addr).to_s
-
-          out.puts "ticket: #{ticket}"
-          out.flush if out.respond_to?(:flush)
-
-          incoming = JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out waiting for JSON command client") do
-            server.accept_next
-          end
-          raise "server endpoint closed before accepting a connection" unless incoming
-
-          accepting = JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out accepting JSON command client") do
-            incoming.accept
-          end
-          connection = JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out establishing JSON command connection") do
-            accepting.connect
-          end
-
-          responses = handle_connection(server, connection, deadline)
-          JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out waiting for JSON command client close") do
-            connection.closed
-          end
-          JsonCommandBridgeDemo.close_endpoint(server)
-
-          Result.new(
-            server_id: server_id,
-            ticket: ticket,
+          Iroh::JsonBridge::Server.new(
+            endpoint_options: JsonCommandBridgeDemo.endpoint_options,
             alpn: JsonCommandBridgeDemo::ALPN,
-            responses: responses,
-            handled_commands: responses.length,
-            server_closed: server.is_closed
-          )
-        ensure
-          JsonCommandBridgeDemo.close_endpoint(server)
-        end
-
-        def handle_connection(server, connection, deadline)
-          responses = []
-
-          JsonCommandBridgeDemo::MAX_COMMANDS.times do
-            stream = JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out accepting JSON command stream") do
-              connection.accept_bi
-            end
-            payload = JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out reading JSON command") do
-              stream.recv.read_to_end(JsonCommandBridgeDemo::MAX_PAYLOAD_BYTES)
-            end
-            response = response_for_payload(
-              payload,
-              server: server,
-              connection: connection,
-              handled_commands: responses.length + 1
-            )
-            JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out writing JSON command response") do
-              stream.send.write_all(JsonCommandBridgeDemo.encode_response(response))
-            end
-            JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out finishing JSON command response") do
-              stream.send.finish
-            end
-
-            responses << response
-            break if JsonCommandBridgeDemo.shutdown_response?(response)
-          end
-
-          responses
-        end
-
-        def response_for_payload(payload, server:, connection:, handled_commands:)
-          command = JsonCommandBridgeDemo.decode_command(payload)
-          JsonCommandBridgeDemo.response_for(
-            command,
-            server_id: server.id.to_s,
-            remote_id: connection.remote_id.to_s,
-            handled_commands: handled_commands,
-            connection_stable_id: connection.stable_id,
-            paths: connection.paths.length
-          )
-        rescue JSON::ParserError, ArgumentError => e
-          JsonCommandBridgeDemo.error_response(nil, "invalid", e.message)
+            router: JsonCommandBridgeDemo.router,
+            timeout: timeout
+          ).run_once(out: out)
         end
       end
 
       module Client
-        Result = Struct.new(
-          :sender_id,
-          :receiver_id,
-          :ticket,
-          :alpn,
-          :commands,
-          :responses,
-          :sender_closed,
-          keyword_init: true
-        )
-
         module_function
 
         def deliver(ticket, commands = JsonCommandBridgeDemo.default_commands,
                     timeout: JsonCommandBridgeDemo::DEFAULT_TIMEOUT_SECONDS)
-          timeout_seconds = JsonCommandBridgeDemo.normalize_timeout_seconds(timeout)
-          deadline = JsonCommandBridgeDemo.monotonic_time + timeout_seconds
-          ticket = JsonCommandBridgeDemo.normalize_ticket(ticket)
-          commands = commands.map { |command| JsonCommandBridgeDemo.stringify_keys(command) }
-          parsed_addr = JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out parsing JSON command ticket") do
-            Iroh::EndpointTicket.from_string(ticket).endpoint_addr
-          end
-          sender = JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out binding JSON command client endpoint") do
-            JsonCommandBridgeDemo.bind_endpoint
-          end
-          sender_id = sender.id.to_s
-          receiver_id = parsed_addr.id.to_s
-          connection = JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out connecting JSON command client") do
-            sender.connect(parsed_addr, JsonCommandBridgeDemo::ALPN)
-          end
-          responses = commands.map do |command|
-            send_command(connection, command, deadline)
-          end
-
-          JsonCommandBridgeDemo.close_endpoint(sender)
-
-          Result.new(
-            sender_id: sender_id,
-            receiver_id: receiver_id,
-            ticket: ticket,
+          Iroh::JsonBridge::Client.new(
+            endpoint_options: JsonCommandBridgeDemo.endpoint_options,
             alpn: JsonCommandBridgeDemo::ALPN,
-            commands: commands,
-            responses: responses,
-            sender_closed: sender.is_closed
-          )
-        ensure
-          JsonCommandBridgeDemo.close_endpoint(sender)
-        end
-
-        def send_command(connection, command, deadline)
-          stream = JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out opening JSON command stream") do
-            connection.open_bi
-          end
-          JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out writing JSON command") do
-            stream.send.write_all(JsonCommandBridgeDemo.encode_command(command))
-          end
-          JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out finishing JSON command") do
-            stream.send.finish
-          end
-          payload = JsonCommandBridgeDemo.with_deadline_timeout(deadline, "timed out reading JSON command response") do
-            stream.recv.read_to_end(JsonCommandBridgeDemo::MAX_PAYLOAD_BYTES)
-          end
-
-          JsonCommandBridgeDemo.decode_response(payload)
+            timeout: timeout
+          ).deliver(ticket, commands)
         end
       end
     end
